@@ -1,0 +1,28 @@
+server:
+  port: 8080
+  host: localhost
+
+psql:
+  host: localhost
+  port: 5432
+  username: ilyasukharev
+  database: vpn_payments_db
+  ssl_mode: disable
+  max_open_connections: 50
+  max_idle_connections: 10
+  max_lifetime_connections_min: 60
+  migration_file_path: file:/Users/ilyasukharev/Desktop/Vpn/Payment-Service/internal/resources/migration
+
+default_client:
+  timeout: 180
+  MaxIdleConn: 50
+  MaxIdleConnPerHost: 10
+  IdleConnTimeout: 90
+
+services:
+  youkassa:
+    url: https://api.yookassa.ru
+  user_service:
+    url: http://localhost:8081
+  subscription_service:
+    url: http://localhost:8080
