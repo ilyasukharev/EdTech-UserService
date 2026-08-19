@@ -28,6 +28,17 @@ func (c *UserController) RegisterRoutes(r chi.Router) {
 	r.Delete(model.NewApiPath("/v1/users/{id}"), middleware.WrapResponse(c.DeleteUser))
 }
 
+// CreateUser godoc
+// @Summary Создать пользователя
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param reg_id query string true "Идентификатор формы регистрации" format(uuid)
+// @Param request body CreateUser true "Данные пользователя"
+// @Success 201 {object} UserResponse
+// @Failure 400 {object} model.ApiError "Некорректное тело запроса"
+// @Failure 500 {object} model.ApiError
+// @Router /api/user-service/v1/users [post]
 func (c *UserController) CreateUser(_ http.ResponseWriter, r *http.Request) (any, error) {
 	regID, err := utils.GetQueryParam(r, "reg_id", utils.ParseUUID)
 	if err != nil {
@@ -47,6 +58,16 @@ func (c *UserController) CreateUser(_ http.ResponseWriter, r *http.Request) (any
 	return toUserResponse(usr), nil
 }
 
+// GetUserById godoc
+// @Summary Получить пользователя по ID
+// @Tags User
+// @Produce json
+// @Param id path string true "Идентификатор пользователя" format(uuid)
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} model.ApiError "Некорректное тело запроса"
+// @Failure 404 {object} model.ApiError "Пользователь не найден"
+// @Failure 500 {object} model.ApiError
+// @Router /api/user-service/v1/users/{id} [get]
 func (c *UserController) GetUserById(_ http.ResponseWriter, r *http.Request) (any, error) {
 	ID, err := utils.GetPathParam(r, "id", utils.ParseUUID)
 	if err != nil {
@@ -57,6 +78,16 @@ func (c *UserController) GetUserById(_ http.ResponseWriter, r *http.Request) (an
 	return toUserResponse(usr), err
 }
 
+// GetUserByEmail godoc
+// @Summary Получить пользователя по email
+// @Tags User
+// @Produce json
+// @Param email query string true "E-mail пользователя"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} model.ApiError "Некорректное тело запроса"
+// @Failure 404 {object} model.ApiError "Пользователь не найден"
+// @Failure 500 {object} model.ApiError
+// @Router /api/user-service/v1/users/by-email [get]
 func (c *UserController) GetUserByEmail(_ http.ResponseWriter, r *http.Request) (any, error) {
 	emailParam, err := utils.GetQueryParam(r, "email", utils.ParseString)
 	if err != nil {
@@ -67,6 +98,18 @@ func (c *UserController) GetUserByEmail(_ http.ResponseWriter, r *http.Request) 
 	return toUserResponse(usr), err
 }
 
+// UpdateUser godoc
+// @Summary Обновить пользователя
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param id path string true "Идентификатор пользователя" format(uuid)
+// @Param request body UpdateUser true "Данные пользователя"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} model.ApiError "Некорректное тело запроса"
+// @Failure 404 {object} model.ApiError "Пользователь не найден"
+// @Failure 500 {object} model.ApiError
+// @Router /api/user-service/v1/users/{id} [put]
 func (c *UserController) UpdateUser(_ http.ResponseWriter, r *http.Request) (any, error) {
 	ID, err := utils.GetPathParam(r, "id", utils.ParseUUID)
 	if err != nil {
@@ -82,6 +125,18 @@ func (c *UserController) UpdateUser(_ http.ResponseWriter, r *http.Request) (any
 	return toUserResponse(usr), err
 }
 
+// PatchUser godoc
+// @Summary Обновить пользователя
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param id path string true "Идентификатор пользователя" format(uuid)
+// @Param request body PatchUser true "Данные пользователя"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} model.ApiError "Некорректное тело запроса"
+// @Failure 404 {object} model.ApiError "Пользователь не найден"
+// @Failure 500 {object} model.ApiError
+// @Router /api/user-service/v1/users/{id} [patch]
 func (c *UserController) PatchUser(_ http.ResponseWriter, r *http.Request) (any, error) {
 	ID, err := utils.GetPathParam(r, "id", utils.ParseUUID)
 	if err != nil {
@@ -97,6 +152,16 @@ func (c *UserController) PatchUser(_ http.ResponseWriter, r *http.Request) (any,
 	return toUserResponse(usr), err
 }
 
+// DeleteUser godoc
+// @Summary Удалить пользователя
+// @Tags User
+// @Produce json
+// @Param id path string true "Идентификатор пользователя" format(uuid)
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} model.ApiError "Некорректное тело запроса"
+// @Failure 404 {object} model.ApiError "Пользователь не найден"
+// @Failure 500 {object} model.ApiError
+// @Router /api/user-service/v1/users/{id} [delete]
 func (c *UserController) DeleteUser(_ http.ResponseWriter, r *http.Request) (any, error) {
 	ID, err := utils.GetPathParam(r, "id", utils.ParseUUID)
 	if err != nil {
@@ -121,8 +186,6 @@ func toUserResponse(dbUser *model.User) *UserResponse {
 		Phone:         dbUser.Phone,
 		Notifications: *dbUser.Notifications,
 		Type:          *dbUser.Type,
-		ChildName:     dbUser.ChildName,
-		ChildAge:      dbUser.ChildAge,
 		CreatedAt:     *dbUser.CreatedAt,
 		UpdatedAt:     dbUser.UpdatedAt,
 		DeletedAt:     dbUser.DeletedAt,

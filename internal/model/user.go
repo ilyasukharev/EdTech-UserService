@@ -20,8 +20,6 @@ type User struct {
 	Phone         *string    `db:"phone"`
 	Notifications *bool      `db:"notifications"`
 	Type          *string    `db:"type"`
-	ChildName     *string    `db:"child_name"`
-	ChildAge      *int       `db:"child_age"`
 	CreatedAt     *time.Time `db:"created_at"`
 	UpdatedAt     *time.Time `db:"updated_at"`
 	DeletedAt     *time.Time `db:"deleted_at"`

@@ -24,13 +24,3 @@ default_client:
   MaxIdleConnPerHost: 10
   IdleConnTimeout: 90
 
-services:
-  youkassa:
-    url: https://api.yookassa.ru
-  user_service:
-    url: http://localhost:8081
-  subscription_service:
-    url: http://localhost:8083
-  front:
-    payment_link: http://192.168.1.183:3000/payment?id=%s
-

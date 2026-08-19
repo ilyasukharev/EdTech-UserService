@@ -8,6 +8,9 @@ import (
 	"UserService/internal/model/db"
 	"UserService/internal/repository"
 	"UserService/internal/service"
+	"UserService/internal/transport/auth"
+	"UserService/internal/transport/child"
+	"UserService/internal/transport/referral"
 	"UserService/internal/transport/user"
 	"context"
 	"errors"
@@ -29,7 +32,7 @@ import (
 // StartApiService @title UserService API
 // @version 1.0
 // @description User-Service
-// @host localhost:8080
+// @host localhost:8082
 // @BasePath /
 func StartApiService() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -90,12 +93,23 @@ func registerRoutesAndSchedulers(ctx context.Context, psql *sqlx.DB, redis *redi
 	redisUserRepo := repository.NewRedisUserRepository(redis)
 
 	userRepo := repository.NewUserRepository(psql)
+	childrenRepo := repository.NewChildrenRepository(psql)
+	referralRepo := repository.NewReferralsRepository(psql)
 
 	userService := service.NewUserService(userRepo, redisUserRepo, txManager)
+	childrenService := service.NewChildrenService(txManager, childrenRepo)
+	referralService := service.NewReferralService(txManager, referralRepo)
+	authService := service.NewAuthService(redisUserRepo)
 
 	userController := user.NewUserController(userService)
+	childrenController := child.NewChildrenController(childrenService)
+	referralController := referral.NewReferralController(referralService)
+	authController := auth.NewAuthController(authService)
 
 	userController.RegisterRoutes(root)
+	childrenController.RegisterRoutes(root)
+	referralController.RegisterRoutes(root)
+	authController.RegisterRoutes(root)
 
 	go func() {
 		//paymentCheckerScheduler.StartPaymentStatusChecker()
@@ -119,4 +133,5 @@ func setupMiddlewares(r chi.Router) {
 func registerValidators() {
 	model.Validator = validator.New()
 	_ = model.Validator.RegisterValidation("user_type", user.CheckTypeValid)
+	_ = model.Validator.RegisterValidation("gender", child.CheckGenderValid)
 }

@@ -1,8 +1,764 @@
 basePath: /
-host: localhost:8080
+definitions:
+  child.ChildResponse:
+    properties:
+      age:
+        type: integer
+      birthday:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      gender:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      parent_id:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - age
+    - created_at
+    - id
+    - name
+    - parent_id
+    type: object
+  child.CreateChild:
+    properties:
+      age:
+        type: integer
+      birthday:
+        type: string
+      gender:
+        type: string
+      name:
+        type: string
+      parent_id:
+        type: string
+    required:
+    - age
+    - name
+    - parent_id
+    type: object
+  model.ApiError:
+    properties:
+      message:
+        type: string
+    type: object
+  referral.CreateReferral:
+    properties:
+      referee_id:
+        type: string
+      referrer_id:
+        type: string
+    required:
+    - referee_id
+    - referrer_id
+    type: object
+  referral.PatchReferral:
+    properties:
+      confirmed:
+        type: boolean
+      created_at:
+        type: string
+      referee_id:
+        type: string
+      referrer_id:
+        type: string
+    type: object
+  referral.ReferralResponse:
+    properties:
+      confirmed:
+        type: boolean
+      created_at:
+        type: string
+      id:
+        type: integer
+      referee_id:
+        type: string
+      referrer_id:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - confirmed
+    - created_at
+    - id
+    - referee_id
+    - referrer_id
+    type: object
+  user.CreateUser:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      notifications:
+        default: true
+        type: boolean
+      phone:
+        type: string
+      type:
+        type: string
+    required:
+    - email
+    - first_name
+    - notifications
+    - type
+    type: object
+  user.PatchUser:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      notifications:
+        type: boolean
+      phone:
+        type: string
+      type:
+        type: string
+    type: object
+  user.UpdateUser:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      notifications:
+        type: boolean
+      phone:
+        type: string
+      type:
+        type: string
+    required:
+    - created_at
+    - email
+    - first_name
+    - last_name
+    - middle_name
+    - notifications
+    - phone
+    - type
+    type: object
+  user.UserResponse:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      notifications:
+        type: boolean
+      phone:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - created_at
+    - email
+    - first_name
+    - id
+    - notifications
+    - type
+    type: object
+host: localhost:8082
 info:
   contact: {}
   description: User-Service
   version: "1.0"
-paths: {}
+paths:
+  /api/user-service/v1/auth/code/send:
+    get:
+      parameters:
+      - description: email
+        in: query
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+      summary: Сохранить OTP код по переданному email пользователя
+      tags:
+      - Auth
+  /api/user-service/v1/auth/code/verify:
+    get:
+      parameters:
+      - description: email
+        in: query
+        name: email
+        required: true
+        type: string
+      - description: code
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Переданный OTP код неверный
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Верифицировать OTP код по переданному email пользователя
+      tags:
+      - Auth
+  /api/user-service/v1/children:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные ребенка
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/child.CreateChild'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/child.ChildResponse'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Создать сущность ребенка
+      tags:
+      - Child
+  /api/user-service/v1/children/{id}:
+    delete:
+      parameters:
+      - description: Идентификатор ребенка
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/child.ChildResponse'
+        "400":
+          description: Некорректный идентификатор
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Ребенок не найден
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Удалить сущность ребенка
+      tags:
+      - Child
+    get:
+      parameters:
+      - description: Идентификатор ребенка
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/child.ChildResponse'
+        "400":
+          description: Некорректный идентификатор
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Ребенок не найден
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Получить сущность ребенка
+      tags:
+      - Child
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Идентификатор ребенка
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/child.ChildResponse'
+        "400":
+          description: Некорректный идентификатор
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Ребенок не найден
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Обновить сущность ребенка
+      tags:
+      - Child
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Идентификатор ребенка
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/child.ChildResponse'
+        "400":
+          description: Некорректный идентификатор
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Ребенок не найден
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Обновить сущность ребенка
+      tags:
+      - Child
+  /api/user-service/v1/children/by-parent/{id}:
+    get:
+      parameters:
+      - description: Идентификатор родителя
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/child.ChildResponse'
+        "400":
+          description: Некорректный идентификатор
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Ребенок не найден
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Получить сущность ребенка по идентификатору родителя
+      tags:
+      - Child
+  /api/user-service/v1/referrals:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Идентификатор рефералки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные рефералки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/referral.PatchReferral'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/referral.ReferralResponse'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Рефералка не найдена
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Обновить запись с рефералкой
+      tags:
+      - Referral
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные рефералки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/referral.CreateReferral'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/referral.ReferralResponse'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Создать запись с рефералкой
+      tags:
+      - Referral
+  /api/user-service/v1/referrals/by-referee/{id}:
+    get:
+      parameters:
+      - description: Идентификатор referee
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/referral.ReferralResponse'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Рефералка не найдена
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Получить запись рефералки по ID referee
+      tags:
+      - Referral
+  /api/user-service/v1/referrals/by-referrer/{id}:
+    get:
+      parameters:
+      - description: Идентификатор referrer
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/referral.ReferralResponse'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Рефералка не найдена
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Получить запись рефералки по ID referrer
+      tags:
+      - Referral
+  /api/user-service/v1/users:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Идентификатор формы регистрации
+        format: uuid
+        in: query
+        name: reg_id
+        required: true
+        type: string
+      - description: Данные пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreateUser'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/user.UserResponse'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Создать пользователя
+      tags:
+      - User
+  /api/user-service/v1/users/{id}:
+    delete:
+      parameters:
+      - description: Идентификатор пользователя
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.UserResponse'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Удалить пользователя
+      tags:
+      - User
+    get:
+      parameters:
+      - description: Идентификатор пользователя
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.UserResponse'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Получить пользователя по ID
+      tags:
+      - User
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Идентификатор пользователя
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Данные пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.PatchUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.UserResponse'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Обновить пользователя
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Идентификатор пользователя
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Данные пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdateUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.UserResponse'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Обновить пользователя
+      tags:
+      - User
+  /api/user-service/v1/users/by-email:
+    get:
+      parameters:
+      - description: E-mail пользователя
+        in: query
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.UserResponse'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Получить пользователя по email
+      tags:
+      - User
 swagger: "2.0"

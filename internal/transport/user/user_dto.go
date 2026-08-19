@@ -9,15 +9,13 @@ import (
 )
 
 type CreateUser struct {
-	FirstName     string  `json:"first_name" validate:"required"`
+	FirstName     string  `json:"first_name" validate:"required" binding:"required"`
 	LastName      *string `json:"last_name"`
 	MiddleName    *string `json:"middle_name"`
-	Email         string  `json:"email" validate:"required,email"`
+	Email         string  `json:"email" validate:"required,email" binding:"required"`
 	Phone         *string `json:"phone"`
-	Notifications bool    `json:"notifications" default:"true"`
-	Type          string  `json:"type" validate:"user_type"`
-	ChildName     *string `json:"child_name" validate:"required_if=Type PARENT"`
-	ChildAge      *int    `json:"child_age" validate:"required_if=Type PARENT,gte=1,lte=18"`
+	Notifications bool    `json:"notifications" default:"true" binding:"required"`
+	Type          string  `json:"type" validate:"user_type" binding:"required"`
 }
 
 func CheckTypeValid(fl validator.FieldLevel) bool {
@@ -39,23 +37,19 @@ func (c *CreateUser) ToUser() *model.User {
 		Phone:         c.Phone,
 		Notifications: &c.Notifications,
 		Type:          &c.Type,
-		ChildName:     c.ChildName,
-		ChildAge:      c.ChildAge,
 		CreatedAt:     utils.TimePtr(time.Now()),
 	}
 }
 
 type UpdateUser struct {
-	FirstName     string    `json:"first_name"`
-	LastName      string    `json:"last_name"`
-	MiddleName    string    `json:"middle_name"`
-	Email         string    `json:"email"`
-	Phone         string    `json:"phone"`
-	Notifications bool      `json:"notifications"`
-	Type          string    `json:"type"`
-	ChildName     string    `json:"child_name"`
-	ChildAge      int       `json:"child_age"`
-	CreatedAt     time.Time `json:"created_at"`
+	FirstName     string    `json:"first_name" binding:"required"`
+	LastName      string    `json:"last_name" binding:"required"`
+	MiddleName    string    `json:"middle_name" binding:"required"`
+	Email         string    `json:"email" binding:"required"`
+	Phone         string    `json:"phone" binding:"required"`
+	Notifications bool      `json:"notifications" binding:"required"`
+	Type          string    `json:"type" binding:"required"`
+	CreatedAt     time.Time `json:"created_at" binding:"required"`
 }
 
 func (c *UpdateUser) ToUser(ID uuid.UUID) *model.User {
@@ -68,8 +62,6 @@ func (c *UpdateUser) ToUser(ID uuid.UUID) *model.User {
 		Phone:         &c.Phone,
 		Notifications: &c.Notifications,
 		Type:          &c.Type,
-		ChildName:     &c.ChildName,
-		ChildAge:      &c.ChildAge,
 		CreatedAt:     &c.CreatedAt,
 		UpdatedAt:     utils.TimePtr(time.Now()),
 	}
@@ -83,8 +75,6 @@ type PatchUser struct {
 	Phone         *string    `json:"phone"`
 	Notifications *bool      `json:"notifications"`
 	Type          *string    `json:"type"`
-	ChildName     *string    `json:"child_name"`
-	ChildAge      *int       `json:"child_age"`
 	CreatedAt     *time.Time `json:"created_at"`
 }
 
@@ -98,25 +88,21 @@ func (c *PatchUser) ToUser(ID uuid.UUID) *model.User {
 		Phone:         c.Phone,
 		Notifications: c.Notifications,
 		Type:          c.Type,
-		ChildName:     c.ChildName,
-		ChildAge:      c.ChildAge,
 		CreatedAt:     c.CreatedAt,
 		UpdatedAt:     utils.TimePtr(time.Now()),
 	}
 }
 
 type UserResponse struct {
-	ID            uuid.UUID  `json:"id"`
-	FirstName     string     `json:"first_name"`
+	ID            uuid.UUID  `json:"id" binding:"required"`
+	FirstName     string     `json:"first_name" binding:"required"`
 	LastName      *string    `json:"last_name"`
 	MiddleName    *string    `json:"middle_name"`
-	Email         string     `json:"email"`
+	Email         string     `json:"email" binding:"required"`
 	Phone         *string    `json:"phone"`
-	Notifications bool       `json:"notifications"`
-	Type          string     `json:"type"`
-	ChildName     *string    `json:"child_name"`
-	ChildAge      *int       `json:"child_age"`
-	CreatedAt     time.Time  `json:"created_at"`
+	Notifications bool       `json:"notifications" binding:"required"`
+	Type          string     `json:"type" binding:"required"`
+	CreatedAt     time.Time  `json:"created_at" binding:"required"`
 	UpdatedAt     *time.Time `json:"updated_at"`
 	DeletedAt     *time.Time `json:"deleted_at"`
 }

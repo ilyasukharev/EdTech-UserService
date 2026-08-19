@@ -23,16 +23,16 @@ func NewUserRepository(database *sqlx.DB) *UserRepository {
 
 func (r *UserRepository) Create(ctx context.Context, tx *sqlx.Tx, user *model.User) (*model.User, error) {
 	query := `
-	INSERT INTO users (id, first_name, last_name, middle_name, email, phone, 
-	                   notifications, type, child_name, child_age, created_at)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+	INSERT INTO users (id, first_name, last_name, middle_name, email, 
+	                   phone, notifications, type, created_at)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
 	RETURNING *
 	`
 
 	row := tx.QueryRowxContext(ctx, query,
 		user.ID, user.FirstName, user.LastName, user.MiddleName,
-		user.Email, user.Phone, user.Notifications, user.Type,
-		user.ChildName, user.ChildAge, user.CreatedAt)
+		user.Email, user.Phone,
+		user.Notifications, user.Type, user.CreatedAt)
 
 	var result model.User
 	if err := row.StructScan(&result); err != nil {
@@ -78,8 +78,6 @@ func (r *UserRepository) Update(ctx context.Context, tx *sqlx.Tx, userModel *mod
 		{userModel.Phone, "phone"},
 		{userModel.Notifications, "notifications"},
 		{userModel.Type, "type"},
-		{userModel.ChildName, "child_name"},
-		{userModel.ChildAge, "child_age"},
 		{userModel.CreatedAt, "created_at"},
 		{userModel.UpdatedAt, "updated_at"},
 	}

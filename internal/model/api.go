@@ -1,19 +1,18 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type LogLevel string
 
-const (
-	LogError LogLevel = "ERROR"
-	LogWarn  LogLevel = "WARN"
-	LogInfo  LogLevel = "INFO"
-)
+const LogError LogLevel = "ERROR"
 
 const (
 	baseApiPath = "/api/user-service"
@@ -21,12 +20,10 @@ const (
 	XRequestIDHeader = "X-Request-ID"
 )
 
-const SourceApiErr = "API"
-
 var Validator = validator.New()
 
 type ApiError struct {
-	Code    int           `json:"code"`
+	Code    int           `json:"-"`
 	Message string        `json:"message"`
 	Details *DebugDetails `json:"-"`
 }
@@ -100,4 +97,33 @@ func (e *ApiError) WithRequestId(requestId string) *ApiError {
 type PatchField struct {
 	Value any
 	Name  string
+}
+
+type Date time.Time
+
+func (d *Date) UnmarshalJSON(data []byte) error {
+	value, err := strconv.Unquote(string(data))
+	if err != nil {
+		return err
+	}
+
+	t, err := time.Parse("2006-01-02", value)
+	if err != nil {
+		return err
+	}
+
+	*d = Date(t)
+	return nil
+}
+
+func (d Date) MarshalJSON() ([]byte, error) {
+	return json.Marshal(time.Time(d).Format("2006-01-02"))
+}
+
+func (d *Date) AsTime() *time.Time {
+	if d == nil {
+		return nil
+	}
+	t := time.Time(*d)
+	return &t
 }

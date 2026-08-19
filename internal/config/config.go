@@ -53,22 +53,6 @@ type Config struct {
 		MaxIdleConnPerHost int `yaml:"max_idle_conn_per_host"`
 		IdleConnTimeout    int `yaml:"idle_conn_timeout"`
 	} `yaml:"default_client"`
-	Services struct {
-		Youkassa struct {
-			URL    string `yaml:"url"`
-			ShopID string
-			Token  string
-		}
-		UserService struct {
-			URL string `yaml:"url"`
-		} `yaml:"user_service"`
-		SubscriptionService struct {
-			URL string `yaml:"url"`
-		} `yaml:"subscription_service"`
-		Front struct {
-			PaymentLink string `yaml:"payment_link"`
-		} `yaml:"front"`
-	} `yaml:"services"`
 }
 
 func IsDevStand() bool {

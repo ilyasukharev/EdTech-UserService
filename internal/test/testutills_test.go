@@ -7,17 +7,16 @@ import (
 	"UserService/internal/model/db"
 	"UserService/internal/repository"
 	"UserService/internal/service"
+	"UserService/internal/transport/auth"
+	"UserService/internal/transport/child"
+	"UserService/internal/transport/referral"
 	"UserService/internal/transport/user"
-	"UserService/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
 	"log"
-	"math/rand/v2"
 	"os"
-	"strconv"
 	"testing"
 	"time"
 )
@@ -29,7 +28,7 @@ func newTxManager(t *testing.T, database *sqlx.DB) *db.TxManager {
 	return db.NewTxManager(database, cfg.MainDatabase.MaxTransactionRetries)
 }
 
-func newRedisUserRepository(t *testing.T, client *redis.Client) *repository.RedisUserRepository {
+func newRedisUserRepository(t *testing.T, client *redis.Client) *repository.UserRedisRepository {
 	t.Helper()
 	return repository.NewRedisUserRepository(client)
 }
@@ -39,14 +38,54 @@ func newUserRepository(t *testing.T, db *sqlx.DB) *repository.UserRepository {
 	return repository.NewUserRepository(db)
 }
 
+func newReferralRepository(t *testing.T, db *sqlx.DB) *repository.ReferralsRepository {
+	t.Helper()
+	return repository.NewReferralsRepository(db)
+}
+
+func newChildrenRepository(t *testing.T, db *sqlx.DB) *repository.ChildrenRepository {
+	t.Helper()
+	return repository.NewChildrenRepository(db)
+}
+
 func newUserService(t *testing.T, db *sqlx.DB, redisClient *redis.Client) *service.UserService {
 	t.Helper()
 	return service.NewUserService(newUserRepository(t, db), newRedisUserRepository(t, redisClient), newTxManager(t, db))
 }
 
+func newReferralService(t *testing.T, db *sqlx.DB) *service.ReferralService {
+	t.Helper()
+	return service.NewReferralService(newTxManager(t, db), newReferralRepository(t, db))
+}
+
+func newChildrenService(t *testing.T, db *sqlx.DB) *service.ChildrenService {
+	t.Helper()
+	return service.NewChildrenService(newTxManager(t, db), newChildrenRepository(t, db))
+}
+
+func newAuthService(t *testing.T, redisClient *redis.Client) *service.AuthService {
+	t.Helper()
+	return service.NewAuthService(newRedisUserRepository(t, redisClient))
+}
+
 func newUserController(t *testing.T, db *sqlx.DB, redisClient *redis.Client) *user.UserController {
 	t.Helper()
 	return user.NewUserController(newUserService(t, db, redisClient))
+}
+
+func newReferralController(t *testing.T, db *sqlx.DB) *referral.ReferralController {
+	t.Helper()
+	return referral.NewReferralController(newReferralService(t, db))
+}
+
+func newChildrenController(t *testing.T, db *sqlx.DB) *child.ChildrenController {
+	t.Helper()
+	return child.NewChildrenController(newChildrenService(t, db))
+}
+
+func newAuthController(t *testing.T, redisClient *redis.Client) *auth.AuthController {
+	t.Helper()
+	return auth.NewAuthController(newAuthService(t, redisClient))
 }
 
 func connectDB(t *testing.T) *sqlx.DB {
@@ -119,62 +158,7 @@ func assertTimePtrEqual(t *testing.T, field string, got, want *time.Time) {
 func regCustomValidators() {
 	model.Validator = validator.New()
 	_ = model.Validator.RegisterValidation("user_type", user.CheckTypeValid)
-}
-
-func createUserModel() *user.CreateUser {
-	return &user.CreateUser{
-		FirstName:     "Илья",
-		LastName:      utils.StringPtr("Дмитриев"),
-		MiddleName:    utils.StringPtr("Дмитриевич"),
-		Email:         "test" + uuid.NewString() + "@ya.ru",
-		Phone:         utils.StringPtr("79" + generateRandNumbersAsString(9, 10)),
-		Notifications: true,
-		Type:          model.Parent,
-		ChildName:     utils.StringPtr("Алеша"),
-		ChildAge:      utils.IntPtr(18),
-	}
-}
-
-func updateUserModel() *user.UpdateUser {
-	return &user.UpdateUser{
-		FirstName:     "John",
-		LastName:      "Doe",
-		MiddleName:    "A",
-		Email:         "test" + uuid.NewString() + "@doe.com",
-		Phone:         "79" + generateRandNumbersAsString(9, 10),
-		Notifications: false,
-		Type:          model.ContentCreator,
-		ChildName:     "Robin",
-		ChildAge:      1,
-		CreatedAt:     time.Now(),
-	}
-}
-
-func patchUserModel() *user.PatchUser {
-	return &user.PatchUser{
-		FirstName:     utils.StringPtr("John"),
-		LastName:      utils.StringPtr("Doe"),
-		MiddleName:    utils.StringPtr("A"),
-		Email:         utils.StringPtr("test" + uuid.NewString() + "@doe.com"),
-		Phone:         utils.StringPtr("79" + generateRandNumbersAsString(9, 10)),
-		Notifications: utils.BoolPtr(false),
-		Type:          utils.StringPtr(model.ContentCreator),
-		ChildName:     utils.StringPtr("Robin"),
-		ChildAge:      utils.IntPtr(1),
-		CreatedAt:     utils.TimePtr(time.Now()),
-	}
-}
-
-func generateRandNumbersAsString(count int, rightBoundExclude int) string {
-	if count <= 0 {
-		count = 1
-	}
-
-	var str string
-	for i := 0; i < count; i++ {
-		str += strconv.Itoa(rand.IntN(rightBoundExclude))
-	}
-	return str
+	_ = model.Validator.RegisterValidation("gender", child.CheckGenderValid)
 }
 
 func setUpConfig() {
@@ -190,24 +174,46 @@ func setUpConfig() {
 	}
 }
 
-type TestControllers struct {
-	userController *user.UserController
+type TestData struct {
+	db          *sqlx.DB
+	redisClient *redis.Client
+
+	userController     *user.UserController
+	referralController *referral.ReferralController
+	childrenController *child.ChildrenController
+	authController     *auth.AuthController
 }
 
-func configureEnvironment(t *testing.T) (chi.Router, *TestControllers) {
+func configure(t *testing.T) (chi.Router, *TestData) {
 	t.Helper()
 
 	setUpConfig()
 	db := connectDB(t)
 	redis := connectRedis(t)
-	t.Cleanup(func() { _ = db.Close() })
+	t.Cleanup(func() {
+		_ = db.Close()
+		_ = redis.Close()
+	})
 
-	controller := newUserController(t, db, redis)
+	userController := newUserController(t, db, redis)
+	referralController := newReferralController(t, db)
+	childrenController := newChildrenController(t, db)
+	authController := newAuthController(t, redis)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestId)
-	controller.RegisterRoutes(r)
+	userController.RegisterRoutes(r)
+	referralController.RegisterRoutes(r)
+	childrenController.RegisterRoutes(r)
+	authController.RegisterRoutes(r)
 	regCustomValidators()
 
-	return r, &TestControllers{userController: controller}
+	return r, &TestData{
+		db:                 db,
+		redisClient:        redis,
+		userController:     userController,
+		referralController: referralController,
+		childrenController: childrenController,
+		authController:     authController,
+	}
 }

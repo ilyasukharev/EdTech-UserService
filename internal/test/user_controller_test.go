@@ -1,42 +1,23 @@
 package transport
 
 import (
+	"UserService/internal/model"
 	"UserService/internal/transport/user"
 	"UserService/internal/utils"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"math/rand/v2"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	_ "github.com/lib/pq"
 )
 
 func TestShouldCreateUser(t *testing.T) {
 	createUser(t, createUserModel(), http.StatusCreated, true)
-}
-
-func TestShouldReturnErrWhenParentDoesNotHaveChild(t *testing.T) {
-	userModel := createUserModel()
-	userModel.ChildName = nil
-	userModel.ChildAge = nil
-
-	createUser(t, userModel, http.StatusBadRequest, true)
-}
-
-func TestShouldReturnErrWhenChildAgeValueIsNotInBounds(t *testing.T) {
-	userModel := createUserModel()
-	if rand.IntN(2) == 0 {
-		userModel.ChildAge = utils.IntPtr(0)
-	} else {
-		userModel.ChildAge = utils.IntPtr(19)
-	}
-	userModel.ChildAge = nil
-
-	createUser(t, userModel, http.StatusBadRequest, true)
 }
 
 func TestShouldReturnErrWhenUserWithEmailAlreadyExists(t *testing.T) {
@@ -103,7 +84,7 @@ func TestShouldReturnErrWhenDeleteUserWithUnExistID(t *testing.T) {
 }
 
 func createUser(t *testing.T, expected *user.CreateUser, expectedCode int, redisHasEmail bool) *user.UserResponse {
-	r, e := configureEnvironment(t)
+	r, e := configure(t)
 
 	regID := uuid.New()
 	if redisHasEmail {
@@ -137,8 +118,6 @@ func createUser(t *testing.T, expected *user.CreateUser, expectedCode int, redis
 	assertPtrEqual(t, "phone", actual.Phone, expected.Phone)
 	assertPtrEqual(t, "notifications", &actual.Notifications, &expected.Notifications)
 	assertPtrEqual(t, "type", &actual.Type, &expected.Type)
-	assertPtrEqual(t, "child_name", actual.ChildName, expected.ChildName)
-	assertPtrEqual(t, "child_age", actual.ChildAge, expected.ChildAge)
 
 	return &actual
 }
@@ -152,7 +131,7 @@ func getUserByEmail(t *testing.T, expected *user.CreateUser, email string, expec
 }
 
 func getUser(t *testing.T, expected *user.CreateUser, url string, expectedCode int) {
-	r, _ := configureEnvironment(t)
+	r, _ := configure(t)
 
 	req := httptest.NewRequest(http.MethodGet, url, nil)
 	rr := httptest.NewRecorder()
@@ -178,12 +157,10 @@ func getUser(t *testing.T, expected *user.CreateUser, url string, expectedCode i
 	assertPtrEqual(t, "phone", actual.Phone, expected.Phone)
 	assertPtrEqual(t, "notifications", &actual.Notifications, &expected.Notifications)
 	assertPtrEqual(t, "type", &actual.Type, &expected.Type)
-	assertPtrEqual(t, "child_name", actual.ChildName, expected.ChildName)
-	assertPtrEqual(t, "child_age", actual.ChildAge, expected.ChildAge)
 }
 
 func updateUser(t *testing.T, expected *user.UpdateUser, ID uuid.UUID, expectedCode int) *user.UserResponse {
-	r, _ := configureEnvironment(t)
+	r, _ := configure(t)
 
 	bodyBytes, _ := json.Marshal(expected)
 	req := httptest.NewRequest(http.MethodPut, "/api/user-service/v1/users/"+ID.String(), bytes.NewBuffer(bodyBytes))
@@ -211,14 +188,12 @@ func updateUser(t *testing.T, expected *user.UpdateUser, ID uuid.UUID, expectedC
 	assertPtrEqual(t, "phone", actual.Phone, &expected.Phone)
 	assertPtrEqual(t, "notifications", &actual.Notifications, &expected.Notifications)
 	assertPtrEqual(t, "type", &actual.Type, &expected.Type)
-	assertPtrEqual(t, "child_name", actual.ChildName, &expected.ChildName)
-	assertPtrEqual(t, "child_age", actual.ChildAge, &expected.ChildAge)
 
 	return &actual
 }
 
 func patchUser(t *testing.T, expected *user.PatchUser, ID uuid.UUID, expectedCode int) *user.UserResponse {
-	r, _ := configureEnvironment(t)
+	r, _ := configure(t)
 
 	bodyBytes, _ := json.Marshal(expected)
 	req := httptest.NewRequest(http.MethodPatch, "/api/user-service/v1/users/"+ID.String(), bytes.NewBuffer(bodyBytes))
@@ -246,14 +221,12 @@ func patchUser(t *testing.T, expected *user.PatchUser, ID uuid.UUID, expectedCod
 	assertPtrEqual(t, "phone", actual.Phone, expected.Phone)
 	assertPtrEqual(t, "notifications", &actual.Notifications, expected.Notifications)
 	assertPtrEqual(t, "type", &actual.Type, expected.Type)
-	assertPtrEqual(t, "child_name", actual.ChildName, expected.ChildName)
-	assertPtrEqual(t, "child_age", actual.ChildAge, expected.ChildAge)
 
 	return &actual
 }
 
 func deleteUser(t *testing.T, expected *user.CreateUser, ID uuid.UUID, expectedCode int) *user.UserResponse {
-	r, _ := configureEnvironment(t)
+	r, _ := configure(t)
 
 	bodyBytes, _ := json.Marshal(expected)
 	req := httptest.NewRequest(http.MethodDelete, "/api/user-service/v1/users/"+ID.String(), bytes.NewBuffer(bodyBytes))
@@ -281,11 +254,47 @@ func deleteUser(t *testing.T, expected *user.CreateUser, ID uuid.UUID, expectedC
 	assertPtrEqual(t, "phone", actual.Phone, expected.Phone)
 	assertPtrEqual(t, "notifications", &actual.Notifications, &expected.Notifications)
 	assertPtrEqual(t, "type", &actual.Type, &expected.Type)
-	assertPtrEqual(t, "child_name", actual.ChildName, expected.ChildName)
-	assertPtrEqual(t, "child_age", actual.ChildAge, expected.ChildAge)
 	if actual.DeletedAt == nil {
 		t.Fatal("expected DeletedAt to be non-nil")
 	}
 
 	return &actual
+}
+
+func createUserModel() *user.CreateUser {
+	return &user.CreateUser{
+		FirstName:     "Илья",
+		LastName:      utils.StringPtr("Дмитриев"),
+		MiddleName:    utils.StringPtr("Дмитриевич"),
+		Email:         "test" + uuid.NewString() + "@ya.ru",
+		Phone:         utils.StringPtr("79" + utils.GenerateRandNumbersAsString(9, 10)),
+		Notifications: true,
+		Type:          model.Parent,
+	}
+}
+
+func updateUserModel() *user.UpdateUser {
+	return &user.UpdateUser{
+		FirstName:     "John",
+		LastName:      "Doe",
+		MiddleName:    "A",
+		Email:         "test" + uuid.NewString() + "@doe.com",
+		Phone:         "79" + utils.GenerateRandNumbersAsString(9, 10),
+		Notifications: false,
+		Type:          model.ContentCreator,
+		CreatedAt:     time.Now(),
+	}
+}
+
+func patchUserModel() *user.PatchUser {
+	return &user.PatchUser{
+		FirstName:     utils.StringPtr("John"),
+		LastName:      utils.StringPtr("Doe"),
+		MiddleName:    utils.StringPtr("A"),
+		Email:         utils.StringPtr("test" + uuid.NewString() + "@doe.com"),
+		Phone:         utils.StringPtr("79" + utils.GenerateRandNumbersAsString(9, 10)),
+		Notifications: utils.BoolPtr(false),
+		Type:          utils.StringPtr(model.ContentCreator),
+		CreatedAt:     utils.TimePtr(time.Now()),
+	}
 }
