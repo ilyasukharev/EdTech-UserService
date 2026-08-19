@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func DecodeRequestAndValidate(body io.ReadCloser, v any) error {
@@ -71,7 +72,11 @@ func GetPathParam[T any](
 	parse Parser[T],
 ) (T, error) {
 	value := chi.URLParam(r, name)
-	return parse(value)
+	parsed, err := parse(value)
+	if err != nil {
+		return parsed, fmt.Errorf("%w:%v", errors.PathArgumentValueIncorrectErr, err)
+	}
+	return parsed, nil
 }
 
 func GetQueryParam[T any](
@@ -80,7 +85,11 @@ func GetQueryParam[T any](
 	parse Parser[T],
 ) (T, error) {
 	value := r.URL.Query().Get(name)
-	return parse(value)
+	parsed, err := parse(value)
+	if err != nil {
+		return parsed, fmt.Errorf("%w:%v", errors.QueryArgumentValueIncorrectErr, err)
+	}
+	return parsed, nil
 }
 
 func ParseUUID(v string) (uuid.UUID, error) {
@@ -89,4 +98,8 @@ func ParseUUID(v string) (uuid.UUID, error) {
 
 func ParseString(v string) (string, error) {
 	return v, nil
+}
+
+func ParseInt64(v string) (int64, error) {
+	return strconv.ParseInt(v, 10, 64)
 }

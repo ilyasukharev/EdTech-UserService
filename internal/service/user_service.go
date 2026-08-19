@@ -14,11 +14,11 @@ import (
 
 type UserService struct {
 	Repo      *repository.UserRepository
-	RedisRepo *repository.RedisUserRepository
+	RedisRepo *repository.UserRedisRepository
 	TxManager *db.TxManager
 }
 
-func NewUserService(repo *repository.UserRepository, redisRepo *repository.RedisUserRepository, txManager *db.TxManager) *UserService {
+func NewUserService(repo *repository.UserRepository, redisRepo *repository.UserRedisRepository, txManager *db.TxManager) *UserService {
 	return &UserService{
 		Repo:      repo,
 		RedisRepo: redisRepo,
@@ -42,13 +42,8 @@ func (s *UserService) CreateUser(ctx context.Context, userModel *model.User, reg
 
 	err = s.TxManager.RunReadCommited(
 		ctx, func(tx *sqlx.Tx) error {
-
 			user, err = s.Repo.Create(ctx, tx, userModel)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return err
 		})
 	if err != nil {
 		return nil, err
@@ -62,18 +57,13 @@ func (s *UserService) GetUserById(ctx context.Context, ID uuid.UUID) (*model.Use
 
 	err := s.TxManager.RunReadCommited(ctx, func(tx *sqlx.Tx) error {
 		var err error
-
 		user, err = s.Repo.GetByID(ctx, tx, ID)
-		if err != nil && err == sql.ErrNoRows {
-			return fmt.Errorf("%w: %v", errors.UserNotFoundErr, err)
-		} else if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	})
 
-	if err != nil {
+	if err != nil && err == sql.ErrNoRows {
+		return nil, fmt.Errorf("%w: %v", errors.UserNotFoundErr, err)
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -85,18 +75,13 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*model.
 
 	err := s.TxManager.RunReadCommited(ctx, func(tx *sqlx.Tx) error {
 		var err error
-
 		user, err = s.Repo.GetByEmail(ctx, tx, email)
-		if err != nil && err == sql.ErrNoRows {
-			return fmt.Errorf("%w: %v", errors.UserNotFoundErr, err)
-		} else if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	})
 
-	if err != nil {
+	if err != nil && err == sql.ErrNoRows {
+		return nil, fmt.Errorf("%w: %v", errors.UserNotFoundErr, err)
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -108,18 +93,13 @@ func (s *UserService) UpdateUser(ctx context.Context, userModel *model.User) (*m
 
 	err := s.TxManager.RunReadCommited(ctx, func(tx *sqlx.Tx) error {
 		var err error
-
 		user, err = s.Repo.Update(ctx, tx, userModel)
-		if err != nil && err == sql.ErrNoRows {
-			return fmt.Errorf("%w: %v", errors.UserNotFoundErr, err)
-		} else if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	})
 
-	if err != nil {
+	if err != nil && err == sql.ErrNoRows {
+		return nil, fmt.Errorf("%w: %v", errors.UserNotFoundErr, err)
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -130,18 +110,13 @@ func (s *UserService) DeleteUser(ctx context.Context, ID uuid.UUID) (*model.User
 	var user *model.User
 	err := s.TxManager.RunReadCommited(ctx, func(tx *sqlx.Tx) error {
 		var err error
-
 		user, err = s.Repo.Delete(ctx, tx, ID)
-		if err != nil && err == sql.ErrNoRows {
-			return fmt.Errorf("%w: %v", errors.UserNotFoundErr, err)
-		} else if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	})
 
-	if err != nil {
+	if err != nil && err == sql.ErrNoRows {
+		return nil, fmt.Errorf("%w: %v", errors.UserNotFoundErr, err)
+	} else if err != nil {
 		return nil, err
 	}
 

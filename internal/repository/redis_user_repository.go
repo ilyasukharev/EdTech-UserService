@@ -15,26 +15,26 @@ const (
 	verificationCodeTTL    = time.Minute
 )
 
-type RedisUserRepository struct {
+type UserRedisRepository struct {
 	Client *redis.Client
 }
 
-func NewRedisUserRepository(client *redis.Client) *RedisUserRepository {
-	return &RedisUserRepository{Client: client}
+func NewRedisUserRepository(client *redis.Client) *UserRedisRepository {
+	return &UserRedisRepository{Client: client}
 }
 
-func (r *RedisUserRepository) SaveVerificationCode(ctx context.Context, email string, code string) error {
+func (r *UserRedisRepository) SaveVerificationCode(ctx context.Context, email string, code string) error {
 	return r.Client.Set(ctx, verificationCodePrefix+email, code, verificationCodeTTL).Err()
 }
 
-func (r *RedisUserRepository) GetVerificationCode(ctx context.Context, email string) (string, error) {
-	return r.Client.Get(ctx, verificationCodePrefix+email).Result()
+func (r *UserRedisRepository) GetVerificationCode(ctx context.Context, email string) (string, error) {
+	return r.Client.GetDel(ctx, verificationCodePrefix+email).Result()
 }
 
-func (r *RedisUserRepository) GetEmailByRegistrationID(ctx context.Context, regID uuid.UUID) (string, error) {
-	return r.Client.Get(ctx, registrationIDPrefix+regID.String()).Result()
+func (r *UserRedisRepository) GetEmailByRegistrationID(ctx context.Context, regID uuid.UUID) (string, error) {
+	return r.Client.GetDel(ctx, registrationIDPrefix+regID.String()).Result()
 }
 
-func (r *RedisUserRepository) SaveRegistrationID(ctx context.Context, regID uuid.UUID, email string) error {
+func (r *UserRedisRepository) SaveRegistrationID(ctx context.Context, regID uuid.UUID, email string) error {
 	return r.Client.Set(ctx, registrationIDPrefix+regID.String(), email, registrationIDTTL).Err()
 }

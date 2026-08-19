@@ -1,6 +1,10 @@
 package utils
 
-import "time"
+import (
+	"math/rand/v2"
+	"strconv"
+	"time"
+)
 
 func BoolPtr(b bool) *bool {
 	return &b
@@ -20,4 +24,16 @@ func TimePtr(t time.Time) *time.Time {
 
 func StringPtr(s string) *string {
 	return &s
+}
+
+func GenerateRandNumbersAsString(count int, rightBoundExclude int) string {
+	if count <= 0 {
+		count = 1
+	}
+
+	var str string
+	for i := 0; i < count; i++ {
+		str += strconv.Itoa(rand.IntN(rightBoundExclude))
+	}
+	return str
 }

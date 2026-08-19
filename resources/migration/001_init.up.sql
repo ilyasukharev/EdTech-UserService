@@ -4,6 +4,11 @@ CREATE TYPE user_type AS ENUM (
     'PARENT'
     );
 
+CREATE TYPE male AS ENUM (
+    'MALE',
+    'FEMALE'
+    );
+
 create table if not exists users
 (
     id            uuid unique primary key,
@@ -14,22 +19,11 @@ create table if not exists users
     phone         varchar     null unique,
     notifications bool        not null default true,
     type          user_type   not null,
-    child_name    varchar     null,
-    child_age     int         null,
     created_at    timestamptz not null default now(),
     updated_at    timestamptz,
     deleted_at    timestamptz
-
-        CONSTRAINT check_has_child
-            CHECK (
-                type <> 'PARENT'
-                    OR (
-                    child_name IS NOT NULL
-                        AND btrim(child_name) <> ''
-                        AND child_age BETWEEN 1 AND 18
-                    )
-                )
 );
+create index idx_user_phone on users(phone);
 
 create table if not exists referrals
 (
@@ -42,3 +36,20 @@ create table if not exists referrals
     CONSTRAINT check_not_self_referral
         CHECK (referrer_id <> referee_id)
 );
+
+create index idx_ref_referrer_id on referrals(referrer_id);
+
+create table if not exists children
+(
+    id         uuid unique primary key default gen_random_uuid(),
+    parent_id  uuid      not null references users (id),
+    name       varchar   not null,
+    age        int       not null,
+    gender     male,
+    birthday   date,
+    created_at timestamp not null      default now(),
+    updated_at timestamp,
+    deleted_at timestamp
+);
+
+create index idx_child_parent_id on children(parent_id);

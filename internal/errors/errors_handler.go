@@ -25,8 +25,26 @@ func GetApiError(err error) *model.ApiError {
 	case errors.Is(err, RegistrationIDNotFoundErr):
 		return model.NewApiError(http.StatusBadRequest, RegistrationIDNotFoundErr.Error())
 
+	case errors.Is(err, RegistrationEmailMismatchErr):
+		return model.NewApiError(http.StatusBadRequest, RegistrationEmailMismatchErr.Error())
+
 	case errors.Is(err, UserNotFoundErr):
 		return model.NewApiError(http.StatusNotFound, UserNotFoundErr.Error())
+
+	case errors.Is(err, ReferralNotFoundErr):
+		return model.NewApiError(http.StatusNotFound, ReferralNotFoundErr.Error())
+
+	case errors.Is(err, ChildNotFoundErr):
+		return model.NewApiError(http.StatusNotFound, ChildNotFoundErr.Error())
+
+	case errors.Is(err, OTPCodeMismatchErr):
+		return model.NewApiError(http.StatusBadRequest, OTPCodeMismatchErr.Error())
+
+	case errors.Is(err, PathArgumentValueIncorrectErr):
+		return model.NewApiError(http.StatusBadRequest, PathArgumentValueIncorrectErr.Error())
+
+	case errors.Is(err, QueryArgumentValueIncorrectErr):
+		return model.NewApiError(http.StatusBadRequest, QueryArgumentValueIncorrectErr.Error())
 
 	case isPqError(err):
 		return handlePqError(err)
